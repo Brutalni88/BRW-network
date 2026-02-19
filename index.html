@@ -1,1 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brutal Chat saar</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: white; display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
+        .red-bar { background: #ff0000; color: white; text-align: center; padding: 5px; font-weight: bold; text-transform: uppercase; font-size: 14px; letter-spacing: 2px; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { background: #1e1e1e; padding: 10px; border-radius: 8px; position: relative; max-width: 80%; border: 1px solid #333; }
+        .msg img { max-width: 200px; display: block; border-radius: 5px; margin-top: 5px; }
+        .meta { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .controls { font-size: 10px; margin-top: 5px; cursor: pointer; color: #3ecf8e; }
+        .input-area { padding: 15px; background: #111; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #222; }
+        .row { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 5px; border: 1px solid #333; background: #222; color: white; }
+        button { padding: 10px; background: #3ecf8e; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        #timeoutLabel { color: #ff4444; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="red-bar">Brutal Right Wing Chat</div>
+    <div id="chat"></div>
+    <div id="dropZone" style="display:none; position:fixed; inset:0; background: rgba(62, 207, 142, 0.2); border: 4px dashed #3ecf8e; z-index: 99; pointer-events: none; align-items: center; justify-content: center; font-size: 20px;">DROP IMAGE HERE SAAR</div>
+    
+    <div class="input-area">
+        <div class="row">
+            <input type="text" id="uName" placeholder="Name" style="flex:0.3;" value="Anon">
+            <input type="color" id="uColor" value="#3ecf8e" style="flex:0.1; height:42px; padding:0;">
+            <span id="timeoutLabel"></span>
+        </div>
+        <div class="row">
+            <input type="text" id="mInput" placeholder="Message or GIF link...">
+            <button id="sendBtn" onclick="send()">Send</button>
+        </div>
+    </div>
 
+    <script>
+        const S_URL = 'https://dttishhuuaxerqpshszk.supabase.co';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dGlzaGh1dWF4ZXJxcHNoc3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjcwNjAsImV4cCI6MjA4NzEwMzA2MH0.09_sMIPfcCT0VtdC_-L99vd_DmO7ZIBnRLr9-OhLU_0';
+        const supabaseClient = supabase.createClient(S_URL, S_KEY);
+        let myID = Math.random().toString(36).substring(7);
+        let onCooldown = false;
+        let timeoutUntil = 0;
+
+        async function load() {
+            const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
+            chat.innerHTML = '';
+            if (data) data.forEach(addMsgToUI);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function addMsgToUI(m) {
+            const isImg = m.content.match(/\.(jpeg|jpg|gif|png)$/) != null || m.content.startsWith('data:image');
+            const content = isImg ? `<img src="${m.content}">` : m.content;
+            const canEdit = m.user_id === myID;
+            
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.id = `msg-${m.id}`;
+            div.innerHTML = `
+                <div class="meta" style="color:${m.color || '#fff'}">${m.username || 'Anon'}:</div>
+                <div>${content}</div>
+                <div class="controls">
+                    <span onclick="delMsg(${m.id})">Delete</span>
+                    ${canEdit && !isImg ? ` | <span onclick="editMsg(${m.id}, '${m.content}')">Edit</span>` : ''}
+                </div>`;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function send(customContent = null) {
+            if (Date.now() < timeoutUntil) return;
+            if (onCooldown) return;
+
+            const val = customContent || mInput.value;
+            if (!val) return;
+
+            if (val.length > 500) {
+                startTimeout(60);
+                return;
+            }
+
+            await supabaseClient.from('messages').insert([{ 
+                content: val, 
+                username: uName.value, 
+                color: uColor.value,
+                user_id: myID 
+            }]);
+
+            mInput.value = '';
+            startCooldown(1);
+        }
+
+        function startCooldown(s) {
+            onCooldown = true;
+            sendBtn.disabled = true;
+            let count = s;
+            const timer = setInterval(() => {
+                count--;
+                timeoutLabel.innerText = `Cooldown: ${count}s`;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    onCooldown = false;
+                    sendBtn.disabled = false;
+                    timeoutLabel.innerText = '';
+                }
+            }, 1000);
+        }
+
+        function startTimeout(s) {
+            timeoutUntil = Date.now() + (s * 1000);
+            mInput.disabled = true;
+            let count = s;
+            const timer = setInterval(() => {
+                count--;
+                mInput.placeholder = `Timeouted for ${count}s`;
+                timeoutLabel.innerText = `TIMEOUT: ${count}s`;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    mInput.disabled = false;
+                    mInput.placeholder = "Type a message...";
+                    timeoutLabel.innerText = '';
+                }
+            }, 1000);
+        }
+
+        async function delMsg(id) { await supabaseClient.from('messages').delete().eq('id', id); location.reload(); }
+        
+        async function editMsg(id, old) {
+            const n = prompt("Edit message:", old);
+            if(n) { await supabaseClient.from('messages').update({ content: n }).eq('id', id); location.reload(); }
+        }
+
+        // Realtime
+        supabaseClient.channel('messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+            if (payload.eventType === 'INSERT') addMsgToUI(payload.new);
+            if (payload.eventType === 'DELETE' || payload.eventType === 'UPDATE') load();
+        }).subscribe();
+
+        // Drag & Drop Images
+        window.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.display = 'flex'; });
+        window.addEventListener('dragleave', () => dropZone.style.display = 'none');
+        window.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.style.display = 'none';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => send(event.target.result);
+                reader.readAsDataURL(file);
+            }
+        });
+
+        load();
+        mInput.addEventListener("keypress", (e) => { if (e.key === "Enter") send(); });
+    </script>
+</body>
+</html>
