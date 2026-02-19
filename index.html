@@ -26,7 +26,7 @@
     
     <div class="input-area">
         <div class="row">
-            <input type="text" id="uName" placeholder="Name" style="flex:0.3;" value="Anon">
+            <input type="text" id="uName" placeholder="Name" maxlength="15" style="flex:0.3;" value="Anon">
             <input type="color" id="uColor" value="#3ecf8e" style="flex:0.1; height:42px; padding:0;">
             <span id="timeoutLabel"></span>
         </div>
@@ -44,6 +44,10 @@
         let onCooldown = false;
         let timeoutUntil = 0;
 
+        function isMedia(val) {
+            return val.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null || val.startsWith('data:image');
+        }
+
         async function load() {
             const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
             chat.innerHTML = '';
@@ -52,39 +56,47 @@
         }
 
         function addMsgToUI(m) {
-            const isImg = m.content.match(/\.(jpeg|jpg|gif|png)$/) != null || m.content.startsWith('data:image');
-            const content = isImg ? `<img src="${m.content}">` : m.content;
+            const content = isMedia(m.content) ? `<img src="${m.content}">` : m.content;
             const canEdit = m.user_id === myID;
             
             const div = document.createElement('div');
             div.className = 'msg';
-            div.id = `msg-${m.id}`;
             div.innerHTML = `
                 <div class="meta" style="color:${m.color || '#fff'}">${m.username || 'Anon'}:</div>
                 <div>${content}</div>
                 <div class="controls">
                     <span onclick="delMsg(${m.id})">Delete</span>
-                    ${canEdit && !isImg ? ` | <span onclick="editMsg(${m.id}, '${m.content}')">Edit</span>` : ''}
+                    ${canEdit && !isMedia(m.content) ? ` | <span onclick="editMsg(${m.id}, '${m.content}')">Edit</span>` : ''}
                 </div>`;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
         }
 
         async function send(customContent = null) {
-            if (Date.now() < timeoutUntil) return;
-            if (onCooldown) return;
+            if (Date.now() < timeoutUntil || onCooldown) return;
 
-            const val = customContent || mInput.value;
-            if (!val) return;
+            const name = uName.value.trim();
+            const val = (customContent || mInput.value).trim();
+            if (!val || !name) return;
 
-            if (val.length > 500) {
-                startTimeout(60);
-                return;
-            }
+            // Name length check
+            if (name.length > 15) { alert("Name too long saar"); return; }
+
+            // Clone check
+            const { data: existing } = await supabaseClient.from('messages').select('username');
+            const lowerName = name.toLowerCase();
+            const isClone = existing?.some(m => {
+                const existingName = m.username.toLowerCase();
+                return lowerName !== existingName && lowerName.includes(existingName);
+            });
+
+            if (isClone) { alert("No clones allowed geg"); return; }
+
+            if (val.length > 500) { startTimeout(60); return; }
 
             await supabaseClient.from('messages').insert([{ 
                 content: val, 
-                username: uName.value, 
+                username: name, 
                 color: uColor.value,
                 user_id: myID 
             }]);
@@ -94,18 +106,12 @@
         }
 
         function startCooldown(s) {
-            onCooldown = true;
-            sendBtn.disabled = true;
+            onCooldown = true; sendBtn.disabled = true;
             let count = s;
             const timer = setInterval(() => {
                 count--;
                 timeoutLabel.innerText = `Cooldown: ${count}s`;
-                if (count <= 0) {
-                    clearInterval(timer);
-                    onCooldown = false;
-                    sendBtn.disabled = false;
-                    timeoutLabel.innerText = '';
-                }
+                if (count <= 0) { clearInterval(timer); onCooldown = false; sendBtn.disabled = false; timeoutLabel.innerText = ''; }
             }, 1000);
         }
 
@@ -115,40 +121,30 @@
             let count = s;
             const timer = setInterval(() => {
                 count--;
-                mInput.placeholder = `Timeouted for ${count}s`;
                 timeoutLabel.innerText = `TIMEOUT: ${count}s`;
-                if (count <= 0) {
-                    clearInterval(timer);
-                    mInput.disabled = false;
-                    mInput.placeholder = "Type a message...";
-                    timeoutLabel.innerText = '';
-                }
+                if (count <= 0) { clearInterval(timer); mInput.disabled = false; timeoutLabel.innerText = ''; }
             }, 1000);
         }
 
-        async function delMsg(id) { await supabaseClient.from('messages').delete().eq('id', id); location.reload(); }
-        
+        async function delMsg(id) { await supabaseClient.from('messages').delete().eq('id', id); }
         async function editMsg(id, old) {
-            const n = prompt("Edit message:", old);
-            if(n) { await supabaseClient.from('messages').update({ content: n }).eq('id', id); location.reload(); }
+            const n = prompt("Edit:", old);
+            if(n) await supabaseClient.from('messages').update({ content: n }).eq('id', id);
         }
 
-        // Realtime
         supabaseClient.channel('messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
             if (payload.eventType === 'INSERT') addMsgToUI(payload.new);
-            if (payload.eventType === 'DELETE' || payload.eventType === 'UPDATE') load();
+            else load();
         }).subscribe();
 
-        // Drag & Drop Images
         window.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.display = 'flex'; });
         window.addEventListener('dragleave', () => dropZone.style.display = 'none');
         window.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZone.style.display = 'none';
+            e.preventDefault(); dropZone.style.display = 'none';
             const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
+            if (file?.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (event) => send(event.target.result);
+                reader.onload = (ev) => send(ev.target.result);
                 reader.readAsDataURL(file);
             }
         });
