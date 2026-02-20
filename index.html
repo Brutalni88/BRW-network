@@ -1,156 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Brutal Chat saar</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brutal Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: white; display: flex; flex-direction: column; height: 100vh; margin: 0; overflow: hidden; }
-        .red-bar { background: #ff0000; color: white; text-align: center; padding: 5px; font-weight: bold; text-transform: uppercase; font-size: 14px; letter-spacing: 2px; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { background: #1e1e1e; padding: 10px; border-radius: 8px; position: relative; max-width: 80%; border: 1px solid #333; }
-        .msg img { max-width: 200px; display: block; border-radius: 5px; margin-top: 5px; }
-        .meta { font-size: 11px; color: #888; margin-bottom: 4px; }
-        .controls { font-size: 10px; margin-top: 5px; cursor: pointer; color: #3ecf8e; }
-        .input-area { padding: 15px; background: #111; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #222; }
-        .row { display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 5px; border: 1px solid #333; background: #222; color: white; }
-        button { padding: 10px; background: #3ecf8e; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
-        button:disabled { background: #555; cursor: not-allowed; }
-        #timeoutLabel { color: #ff4444; font-size: 12px; font-weight: bold; }
+        :root { --red: #ff0000; --dark: #121212; --card: #1e1e1e; }
+        body { font-family: 'Smooch Sans', sans-serif; margin: 0; background: var(--dark); color: white; }
+        
+        /* Top Bar */
+        .top-bar { background: var(--red); color: black; text-align: center; padding: 10px; border-bottom: 2px solid black; }
+        .top-bar h1 { margin: 0; font-size: 2.2rem; text-transform: uppercase; font-weight: 900; }
+        .top-bar p { margin: 0; font-size: 0.9rem; font-weight: 600; }
+
+        .container { padding: 20px; max-width: 500px; margin: auto; }
+        .hidden { display: none !important; }
+        
+        .box { background: var(--card); padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #333; }
+        input, textarea { width: 100%; margin: 8px 0; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; box-sizing: border-box; font-size: 1.2rem; font-family: 'Smooch Sans'; }
+        
+        button { width: 100%; padding: 10px; background: var(--red); border: none; color: black; font-weight: 900; cursor: pointer; font-size: 1.3rem; margin-top: 5px; font-family: 'Smooch Sans'; }
+        button:hover { background: white; }
+
+        /* Post Styling */
+        .post-card { background: var(--card); padding: 15px; margin-bottom: 20px; border-left: 4px solid var(--red); }
+        .post-card h3 { margin: 5px 0; color: var(--red); font-size: 1.8rem; line-height: 1; }
+        .media-content { width: 100%; margin: 10px 0; border-radius: 4px; max-height: 450px; border: 1px solid #333; display: block; }
+        
+        .actions { display: flex; gap: 8px; margin-top: 10px; }
+        .actions button { width: auto; font-size: 1rem; padding: 4px 12px; background: #333; color: white; }
+        
+        .comment { background: #252525; padding: 8px; margin-top: 5px; border-radius: 3px; font-size: 1rem; border-left: 2px solid #555; }
     </style>
 </head>
 <body>
-    <div class="red-bar">Brutal Right Wing Chat</div>
-    <div id="chat"></div>
-    <div id="dropZone" style="display:none; position:fixed; inset:0; background: rgba(62, 207, 142, 0.2); border: 4px dashed #3ecf8e; z-index: 99; pointer-events: none; align-items: center; justify-content: center; font-size: 20px;">DROP IMAGE HERE SAAR</div>
-    
-    <div class="input-area">
-        <div class="row">
-            <input type="text" id="uName" placeholder="Name" maxlength="15" style="flex:0.3;" value="Anon">
-            <input type="color" id="uColor" value="#3ecf8e" style="flex:0.1; height:42px; padding:0;">
-            <span id="timeoutLabel"></span>
-        </div>
-        <div class="row">
-            <input type="text" id="mInput" placeholder="Message or GIF link...">
-            <button id="sendBtn" onclick="send()">Send</button>
-        </div>
+
+<div class="top-bar">
+    <h1>BRUTAL RIGHT WING NETWORK</h1>
+    <p>Edit this text</p>
+</div>
+
+<div class="container">
+    <div id="auth-section" class="box">
+        <h2>LOGIN / REGISTER</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="handleAuth('login')">LOGIN</button>
+        <button onclick="handleAuth('reg')" style="background: #444; color: white;">REGISTER</button>
     </div>
 
-    <script>
-        const S_URL = 'https://dttishhuuaxerqpshszk.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dGlzaGh1dWF4ZXJxcHNoc3prIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjcwNjAsImV4cCI6MjA4NzEwMzA2MH0.09_sMIPfcCT0VtdC_-L99vd_DmO7ZIBnRLr9-OhLU_0';
-        const supabaseClient = supabase.createClient(S_URL, S_KEY);
-        let myID = Math.random().toString(36).substring(7);
-        let onCooldown = false;
-        let timeoutUntil = 0;
+    <div id="main-content" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <span>Welcome, <b id="user-display"></b></span>
+            <button onclick="logout()" style="width: auto; margin: 0; padding: 5px 15px;">Logout</button>
+        </div>
+        
+        <button onclick="document.getElementById('post-form').classList.toggle('hidden')">MAKE POST</button>
+        
+        <div id="post-form" class="box hidden">
+            <input type="text" id="post-title" placeholder="Title (Max 30 words)">
+            <textarea id="post-desc" rows="3" placeholder="Description (100 words)"></textarea>
+            <input type="file" id="post-media" accept="image/*,video/*">
+            <button id="submit-btn" onclick="submitPost()">SUBMIT POST</button>
+        </div>
 
-        function isMedia(val) {
-            return val.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null || val.startsWith('data:image');
+        <div id="feed">Fetching data from the network saar...</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+    // FILL YOUR URL HERE SAAR
+    const SB_URL = 'PASTE_YOUR_PROJECT_URL_HERE'; 
+    const SB_KEY = 'sb_publishable_S5rAhSRgqNAbDRgFnK1fZA_07OHLnJt'; 
+    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+    let currentUser = null;
+
+    async function checkUser() {
+        const { data: { user } } = await _supabase.auth.getUser();
+        if (user) {
+            currentUser = user.user_metadata.username;
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            document.getElementById('user-display').innerText = currentUser;
+            loadPosts();
         }
+    }
 
-        async function load() {
-            const { data } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true });
-            chat.innerHTML = '';
-            if (data) data.forEach(addMsgToUI);
-            chat.scrollTop = chat.scrollHeight;
-        }
+    async function handleAuth(type) {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value;
+        const email = `${u}@brutal.com`;
 
-        function addMsgToUI(m) {
-            const content = isMedia(m.content) ? `<img src="${m.content}">` : m.content;
-            const canEdit = m.user_id === myID;
-            
-            const div = document.createElement('div');
-            div.className = 'msg';
-            div.innerHTML = `
-                <div class="meta" style="color:${m.color || '#fff'}">${m.username || 'Anon'}:</div>
-                <div>${content}</div>
-                <div class="controls">
-                    <span onclick="delMsg(${m.id})">Delete</span>
-                    ${canEdit && !isMedia(m.content) ? ` | <span onclick="editMsg(${m.id}, '${m.content}')">Edit</span>` : ''}
-                </div>`;
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
-        }
-
-        async function send(customContent = null) {
-            if (Date.now() < timeoutUntil || onCooldown) return;
-
-            const name = uName.value.trim();
-            const val = (customContent || mInput.value).trim();
-            if (!val || !name) return;
-
-            // Name length check
-            if (name.length > 15) { alert("Name too long saar"); return; }
-
-            // Clone check
-            const { data: existing } = await supabaseClient.from('messages').select('username');
-            const lowerName = name.toLowerCase();
-            const isClone = existing?.some(m => {
-                const existingName = m.username.toLowerCase();
-                return lowerName !== existingName && lowerName.includes(existingName);
+        if (type === 'reg') {
+            const { error } = await _supabase.auth.signUp({ 
+                email, password: p, options: { data: { username: u } } 
             });
-
-            if (isClone) { alert("No clones allowed geg"); return; }
-
-            if (val.length > 500) { startTimeout(60); return; }
-
-            await supabaseClient.from('messages').insert([{ 
-                content: val, 
-                username: name, 
-                color: uColor.value,
-                user_id: myID 
-            }]);
-
-            mInput.value = '';
-            startCooldown(1);
+            if (error) alert(error.message); else alert("Registered! Login now saar.");
+        } else {
+            const { error } = await _supabase.auth.signInWithPassword({ email, password: p });
+            if (error) alert("Login failed geg"); else location.reload();
         }
+    }
 
-        function startCooldown(s) {
-            onCooldown = true; sendBtn.disabled = true;
-            let count = s;
-            const timer = setInterval(() => {
-                count--;
-                timeoutLabel.innerText = `Cooldown: ${count}s`;
-                if (count <= 0) { clearInterval(timer); onCooldown = false; sendBtn.disabled = false; timeoutLabel.innerText = ''; }
-            }, 1000);
-        }
+    async function logout() { await _supabase.auth.signOut(); location.reload(); }
 
-        function startTimeout(s) {
-            timeoutUntil = Date.now() + (s * 1000);
-            mInput.disabled = true;
-            let count = s;
-            const timer = setInterval(() => {
-                count--;
-                timeoutLabel.innerText = `TIMEOUT: ${count}s`;
-                if (count <= 0) { clearInterval(timer); mInput.disabled = false; timeoutLabel.innerText = ''; }
-            }, 1000);
-        }
+    async function submitPost() {
+        const btn = document.getElementById('submit-btn');
+        const title = document.getElementById('post-title').value;
+        const desc = document.getElementById('post-desc').value;
+        const file = document.getElementById('post-media').files[0];
 
-        async function delMsg(id) { await supabaseClient.from('messages').delete().eq('id', id); }
-        async function editMsg(id, old) {
-            const n = prompt("Edit:", old);
-            if(n) await supabaseClient.from('messages').update({ content: n }).eq('id', id);
-        }
+        if (!file) return alert("Upload a file lol");
+        btn.innerText = "UPLOADING...";
+        btn.disabled = true;
 
-        supabaseClient.channel('messages').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
-            if (payload.eventType === 'INSERT') addMsgToUI(payload.new);
-            else load();
-        }).subscribe();
+        const fileName = `${Date.now()}_${file.name}`;
+        const { data: uploadData, error: uploadError } = await _supabase.storage
+            .from('media').upload(fileName, file);
 
-        window.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.display = 'flex'; });
-        window.addEventListener('dragleave', () => dropZone.style.display = 'none');
-        window.addEventListener('drop', e => {
-            e.preventDefault(); dropZone.style.display = 'none';
-            const file = e.dataTransfer.files[0];
-            if (file?.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (ev) => send(ev.target.result);
-                reader.readAsDataURL(file);
-            }
-        });
+        if (uploadError) return alert("Upload error geg: " + uploadError.message);
 
-        load();
-        mInput.addEventListener("keypress", (e) => { if (e.key === "Enter") send(); });
-    </script>
+        const mediaUrl = `${SB_URL}/storage/v1/object/public/media/${fileName}`;
+
+        const { error } = await _supabase.from('posts').insert([{
+            title, description: desc, media_url: mediaUrl,
+            media_type: file.type, author: currentUser
+        }]);
+
+        if (error) alert(error.message); else location.reload();
+    }
+
+    async function loadPosts() {
+        const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
+        if (error) return console.log(error);
+
+        document.getElementById('feed').innerHTML = data.map(p => `
+            <div class="post-card">
+                <small>By ${p.author} • ${new Date(p.created_at).toLocaleString()}</small>
+                <h3>${p.title}</h3>
+                <p>${p.description}</p>
+                ${p.media_type.includes('video') ? 
+                    `<video class="media-content" src="${p.media_url}" controls></video>` : 
+                    `<img class="media-content" src="${p.media_url}">`
+                }
+                <div class="actions">
+                    <button onclick="interact('${p.id}', 'like', ${p.likes})">👍 ${p.likes}</button>
+                    <button onclick="interact('${p.id}', 'dislike', ${p.dislikes})">👎 ${p.dislikes}</button>
+                    <button onclick="addComment('${p.id}', ${JSON.stringify(p.comments).replace(/"/g, '&quot;')})">💬 ${p.comments.length}</button>
+                </div>
+                ${p.comments.map(c => `<div class="comment"><b>${c.user}:</b> ${c.text}</div>`).join('')}
+            </div>
+        `).join('');
+    }
+
+    async function interact(id, type, val) {
+        const update = type === 'like' ? { likes: val + 1 } : { dislikes: val + 1 };
+        await _supabase.from('posts').update(update).eq('id', id);
+        loadPosts();
+    }
+
+    async function addComment(id, oldComments) {
+        const msg = prompt("Comment:");
+        if (!msg) return;
+        const newComments = [...oldComments, { user: currentUser, text: msg }];
+        await _supabase.from('posts').update({ comments: newComments }).eq('id', id);
+        loadPosts();
+    }
+
+    checkUser();
+</script>
 </body>
 </html>
