@@ -4,43 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brutal Network</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
     <style>
         :root { --red: #ff0000; --dark: #121212; --card: #1e1e1e; }
         body { font-family: 'Smooch Sans', sans-serif; margin: 0; background: var(--dark); color: white; }
-        
-        /* Top Bar */
-        .top-bar { background: var(--red); color: black; text-align: center; padding: 10px; border-bottom: 2px solid black; }
+        .top-bar { background: var(--red); color: black; text-align: center; padding: 10px; border-bottom: 2px solid #000; }
         .top-bar h1 { margin: 0; font-size: 2.2rem; text-transform: uppercase; font-weight: 900; }
-        .top-bar p { margin: 0; font-size: 0.9rem; font-weight: 600; }
-
         .container { padding: 20px; max-width: 500px; margin: auto; }
         .hidden { display: none !important; }
-        
         .box { background: var(--card); padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #333; }
         input, textarea { width: 100%; margin: 8px 0; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; box-sizing: border-box; font-size: 1.2rem; font-family: 'Smooch Sans'; }
-        
         button { width: 100%; padding: 10px; background: var(--red); border: none; color: black; font-weight: 900; cursor: pointer; font-size: 1.3rem; margin-top: 5px; font-family: 'Smooch Sans'; }
-        button:hover { background: white; }
-
-        /* Post Styling */
         .post-card { background: var(--card); padding: 15px; margin-bottom: 20px; border-left: 4px solid var(--red); }
-        .post-card h3 { margin: 5px 0; color: var(--red); font-size: 1.8rem; line-height: 1; }
-        .media-content { width: 100%; margin: 10px 0; border-radius: 4px; max-height: 450px; border: 1px solid #333; display: block; }
-        
-        .actions { display: flex; gap: 8px; margin-top: 10px; }
-        .actions button { width: auto; font-size: 1rem; padding: 4px 12px; background: #333; color: white; }
-        
-        .comment { background: #252525; padding: 8px; margin-top: 5px; border-radius: 3px; font-size: 1rem; border-left: 2px solid #555; }
+        .media-content { width: 100%; margin: 10px 0; border-radius: 4px; max-height: 450px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
     <h1>BRUTAL RIGHT WING NETWORK</h1>
-    <p>Edit this text</p>
 </div>
 
 <div class="container">
@@ -57,30 +39,34 @@
             <span>Welcome, <b id="user-display"></b></span>
             <button onclick="logout()" style="width: auto; margin: 0; padding: 5px 15px;">Logout</button>
         </div>
-        
         <button onclick="document.getElementById('post-form').classList.toggle('hidden')">MAKE POST</button>
-        
         <div id="post-form" class="box hidden">
-            <input type="text" id="post-title" placeholder="Title (Max 30 words)">
-            <textarea id="post-desc" rows="3" placeholder="Description (100 words)"></textarea>
+            <input type="text" id="post-title" placeholder="Title">
+            <textarea id="post-desc" rows="3" placeholder="Description"></textarea>
             <input type="file" id="post-media" accept="image/*,video/*">
             <button id="submit-btn" onclick="submitPost()">SUBMIT POST</button>
         </div>
-
-        <div id="feed">Fetching data from the network saar...</div>
+        <div id="feed">Loading...</div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
-    // FILL YOUR URL HERE SAAR
-    const SB_URL = 'PASTE_YOUR_PROJECT_URL_HERE'; 
+    // FIX THIS LINE SAAR! No spaces, no slash at end.
+    const SB_URL = 'https://eqydpawbspefocrpgxic.supabase.co'; 
     const SB_KEY = 'sb_publishable_S5rAhSRgqNAbDRgFnK1fZA_07OHLnJt'; 
-    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+    let _supabase;
+    try {
+        _supabase = supabase.createClient(SB_URL, SB_KEY);
+    } catch (e) {
+        console.error("Supabase failed to init. Check your URL saar!", e);
+    }
 
     let currentUser = null;
 
     async function checkUser() {
+        if (!_supabase) return;
         const { data: { user } } = await _supabase.auth.getUser();
         if (user) {
             currentUser = user.user_metadata.username;
@@ -92,6 +78,7 @@
     }
 
     async function handleAuth(type) {
+        if (!_supabase) return alert("URL is wrong in the code geg");
         const u = document.getElementById('username').value.trim();
         const p = document.getElementById('password').value;
         const email = `${u}@brutal.com`;
@@ -100,10 +87,10 @@
             const { error } = await _supabase.auth.signUp({ 
                 email, password: p, options: { data: { username: u } } 
             });
-            if (error) alert(error.message); else alert("Registered! Login now saar.");
+            if (error) alert(error.message); else alert("Registered! Login now.");
         } else {
             const { error } = await _supabase.auth.signInWithPassword({ email, password: p });
-            if (error) alert("Login failed geg"); else location.reload();
+            if (error) alert("Login failed lol"); else location.reload();
         }
     }
 
@@ -111,65 +98,39 @@
 
     async function submitPost() {
         const btn = document.getElementById('submit-btn');
-        const title = document.getElementById('post-title').value;
-        const desc = document.getElementById('post-desc').value;
         const file = document.getElementById('post-media').files[0];
+        if (!file) return alert("Add a file saar");
 
-        if (!file) return alert("Upload a file lol");
         btn.innerText = "UPLOADING...";
         btn.disabled = true;
 
         const fileName = `${Date.now()}_${file.name}`;
-        const { data: uploadData, error: uploadError } = await _supabase.storage
-            .from('media').upload(fileName, file);
+        const { data, error: uploadError } = await _supabase.storage.from('media').upload(fileName, file);
 
-        if (uploadError) return alert("Upload error geg: " + uploadError.message);
+        if (uploadError) return alert("Upload failed geg");
 
         const mediaUrl = `${SB_URL}/storage/v1/object/public/media/${fileName}`;
-
-        const { error } = await _supabase.from('posts').insert([{
-            title, description: desc, media_url: mediaUrl,
-            media_type: file.type, author: currentUser
+        await _supabase.from('posts').insert([{
+            title: document.getElementById('post-title').value,
+            description: document.getElementById('post-desc').value,
+            media_url: mediaUrl,
+            media_type: file.type,
+            author: currentUser
         }]);
-
-        if (error) alert(error.message); else location.reload();
+        location.reload();
     }
 
     async function loadPosts() {
         const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
-        if (error) return console.log(error);
-
+        if (error) return;
         document.getElementById('feed').innerHTML = data.map(p => `
             <div class="post-card">
-                <small>By ${p.author} • ${new Date(p.created_at).toLocaleString()}</small>
+                <small>By ${p.author}</small>
                 <h3>${p.title}</h3>
                 <p>${p.description}</p>
-                ${p.media_type.includes('video') ? 
-                    `<video class="media-content" src="${p.media_url}" controls></video>` : 
-                    `<img class="media-content" src="${p.media_url}">`
-                }
-                <div class="actions">
-                    <button onclick="interact('${p.id}', 'like', ${p.likes})">👍 ${p.likes}</button>
-                    <button onclick="interact('${p.id}', 'dislike', ${p.dislikes})">👎 ${p.dislikes}</button>
-                    <button onclick="addComment('${p.id}', ${JSON.stringify(p.comments).replace(/"/g, '&quot;')})">💬 ${p.comments.length}</button>
-                </div>
-                ${p.comments.map(c => `<div class="comment"><b>${c.user}:</b> ${c.text}</div>`).join('')}
+                <img class="media-content" src="${p.media_url}">
             </div>
         `).join('');
-    }
-
-    async function interact(id, type, val) {
-        const update = type === 'like' ? { likes: val + 1 } : { dislikes: val + 1 };
-        await _supabase.from('posts').update(update).eq('id', id);
-        loadPosts();
-    }
-
-    async function addComment(id, oldComments) {
-        const msg = prompt("Comment:");
-        if (!msg) return;
-        const newComments = [...oldComments, { user: currentUser, text: msg }];
-        await _supabase.from('posts').update({ comments: newComments }).eq('id', id);
-        loadPosts();
     }
 
     checkUser();
