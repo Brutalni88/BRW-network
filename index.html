@@ -1,139 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brutal Network</title>
-    <link href="https://fonts.googleapis.com/css2?family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
     <style>
-        :root { --red: #ff0000; --dark: #121212; --card: #1e1e1e; }
-        body { font-family: 'Smooch Sans', sans-serif; margin: 0; background: var(--dark); color: white; }
-        .top-bar { background: var(--red); color: black; text-align: center; padding: 10px; border-bottom: 2px solid #000; }
-        .top-bar h1 { margin: 0; font-size: 2.2rem; text-transform: uppercase; font-weight: 900; }
-        .container { padding: 20px; max-width: 500px; margin: auto; }
-        .hidden { display: none !important; }
-        .box { background: var(--card); padding: 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #333; }
-        input, textarea { width: 100%; margin: 8px 0; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; box-sizing: border-box; font-size: 1.2rem; font-family: 'Smooch Sans'; }
-        button { width: 100%; padding: 10px; background: var(--red); border: none; color: black; font-weight: 900; cursor: pointer; font-size: 1.3rem; margin-top: 5px; font-family: 'Smooch Sans'; }
-        .post-card { background: var(--card); padding: 15px; margin-bottom: 20px; border-left: 4px solid var(--red); }
-        .media-content { width: 100%; margin: 10px 0; border-radius: 4px; max-height: 450px; border: 1px solid #333; }
+        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Permanent+Marker&display=swap');
+
+        body {
+            background-color: #050505;
+            color: white;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* VHS Gritty Overlay */
+        body::after {
+            content: " ";
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Top Red Bar */
+        .top-bar {
+            background-color: #ff0000;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            border-bottom: 3px solid #330000;
+            position: relative;
+            z-index: 5;
+        }
+
+        .top-bar h1 {
+            color: #000;
+            margin: 0;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+
+        .sub-text {
+            color: #888;
+            font-size: 12px;
+            padding-left: 20px;
+            margin-top: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Blurry Background */
+        .bg-blur {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: url('https://i.postimg.cc/fRndTGY0/edited.png') no-repeat center center;
+            background-size: cover;
+            filter: blur(8px) grayscale(40%) contrast(120%) brightness(80%);
+            z-index: 1;
+        }
+
+        /* Centered Military Text */
+        .center-content {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 15vh;
+            text-align: center;
+        }
+
+        .military-title {
+            font-family: 'Black Ops One', system-ui;
+            font-size: 100px;
+            color: #ff0000;
+            text-shadow: 4px 4px 0px #330000;
+            margin: 0;
+            letter-spacing: 5px;
+        }
+
+        .custom-subtitle {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 24px;
+            color: #ccc;
+            margin-top: 10px;
+            text-shadow: 2px 2px 4px #000;
+        }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <h1>BRUTAL RIGHT WING NETWORK</h1>
-</div>
+    <div class="bg-blur"></div>
 
-<div class="container">
-    <div id="auth-section" class="box">
-        <h2>LOGIN / REGISTER</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="handleAuth('login')">LOGIN</button>
-        <button onclick="handleAuth('reg')" style="background: #444; color: white;">REGISTER</button>
+    <div class="top-bar">
+        <h1>BRUTAL RIGHT WING</h1>
+    </div>
+    <div class="sub-text">The Anti-Degeneracy.</div>
+
+    <div class="center-content">
+        <h1 class="military-title">TITLE</h1>
+        <div class="custom-subtitle">Type your custom text right here</div>
     </div>
 
-    <div id="main-content" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <span>Welcome, <b id="user-display"></b></span>
-            <button onclick="logout()" style="width: auto; margin: 0; padding: 5px 15px;">Logout</button>
-        </div>
-        <button onclick="document.getElementById('post-form').classList.toggle('hidden')">MAKE POST</button>
-        <div id="post-form" class="box hidden">
-            <input type="text" id="post-title" placeholder="Title">
-            <textarea id="post-desc" rows="3" placeholder="Description"></textarea>
-            <input type="file" id="post-media" accept="image/*,video/*">
-            <button id="submit-btn" onclick="submitPost()">SUBMIT POST</button>
-        </div>
-        <div id="feed">Loading...</div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script>
-    // FIX THIS LINE SAAR! No spaces, no slash at end.
-    const SB_URL = 'https://eqydpawbspefocrpgxic.supabase.co'; 
-    const SB_KEY = 'sb_publishable_S5rAhSRgqNAbDRgFnK1fZA_07OHLnJt'; 
-
-    let _supabase;
-    try {
-        _supabase = supabase.createClient(SB_URL, SB_KEY);
-    } catch (e) {
-        console.error("Supabase failed to init. Check your URL saar!", e);
-    }
-
-    let currentUser = null;
-
-    async function checkUser() {
-        if (!_supabase) return;
-        const { data: { user } } = await _supabase.auth.getUser();
-        if (user) {
-            currentUser = user.user_metadata.username;
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            document.getElementById('user-display').innerText = currentUser;
-            loadPosts();
-        }
-    }
-
-    async function handleAuth(type) {
-        if (!_supabase) return alert("URL is wrong in the code geg");
-        const u = document.getElementById('username').value.trim();
-        const p = document.getElementById('password').value;
-        const email = `${u}@brutal.com`;
-
-        if (type === 'reg') {
-            const { error } = await _supabase.auth.signUp({ 
-                email, password: p, options: { data: { username: u } } 
-            });
-            if (error) alert(error.message); else alert("Registered! Login now.");
-        } else {
-            const { error } = await _supabase.auth.signInWithPassword({ email, password: p });
-            if (error) alert("Login failed lol"); else location.reload();
-        }
-    }
-
-    async function logout() { await _supabase.auth.signOut(); location.reload(); }
-
-    async function submitPost() {
-        const btn = document.getElementById('submit-btn');
-        const file = document.getElementById('post-media').files[0];
-        if (!file) return alert("Add a file saar");
-
-        btn.innerText = "UPLOADING...";
-        btn.disabled = true;
-
-        const fileName = `${Date.now()}_${file.name}`;
-        const { data, error: uploadError } = await _supabase.storage.from('media').upload(fileName, file);
-
-        if (uploadError) return alert("Upload failed geg");
-
-        const mediaUrl = `${SB_URL}/storage/v1/object/public/media/${fileName}`;
-        await _supabase.from('posts').insert([{
-            title: document.getElementById('post-title').value,
-            description: document.getElementById('post-desc').value,
-            media_url: mediaUrl,
-            media_type: file.type,
-            author: currentUser
-        }]);
-        location.reload();
-    }
-
-    async function loadPosts() {
-        const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
-        if (error) return;
-        document.getElementById('feed').innerHTML = data.map(p => `
-            <div class="post-card">
-                <small>By ${p.author}</small>
-                <h3>${p.title}</h3>
-                <p>${p.description}</p>
-                <img class="media-content" src="${p.media_url}">
-            </div>
-        `).join('');
-    }
-
-    checkUser();
-</script>
 </body>
 </html>
